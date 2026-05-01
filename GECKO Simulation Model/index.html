@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive physics-based simulation of gecko locomotion, biomechanics, multi-species gait analysis, and bio-inspired technology.">
+    <title>Gecko Movement Simulation | Biomechanics & Gait Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header Bar -->
+    <header id="app-header">
+        <div class="header-left">
+            <div class="logo-icon">🦎</div>
+            <div class="header-title">
+                <h1>Gecko Movement Simulation</h1>
+                <p class="subtitle">Biomechanics, Gait Analysis & Bio-Inspiration</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-icon" id="theme-toggle" data-tooltip="Toggle Light/Dark Theme" style="margin-right: 12px; font-size: 16px; background: transparent; border: 1px solid var(--border-color);">🌙</button>
+            <div class="status-pill" id="status-pill">
+                <span class="status-dot"></span>
+                <span id="status-text">Running</span>
+            </div>
+            <div class="fps-display" id="fps-display">60 FPS</div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav id="tab-nav">
+        <button class="tab-btn active" data-tab="simulation"><span class="tab-icon">🦎</span> Simulation</button>
+        <button class="tab-btn" data-tab="biomechanics"><span class="tab-icon">🦴</span> Biomechanics</button>
+        <button class="tab-btn" data-tab="gait"><span class="tab-icon">📊</span> Gait Analysis</button>
+        <button class="tab-btn" data-tab="human"><span class="tab-icon">🧑</span> Human Correlation</button>
+        <button class="tab-btn" data-tab="bioinspiration"><span class="tab-icon">🔬</span> Bio-Inspiration</button>
+    </nav>
+
+    <!-- ═══ TAB: Simulation ═══ -->
+    <main id="tab-simulation" class="tab-content active">
+        <div id="canvas-container">
+            <canvas id="sim-canvas"></canvas>
+            <div id="canvas-overlay-info">
+                <span id="surface-label">Floor — Stone</span>
+            </div>
+        </div>
+        <aside id="sidebar">
+            <!-- Live Data Panel -->
+            <section class="panel" id="data-panel">
+                <h2 class="panel-title"><span class="panel-icon">📊</span> Live Physics Data</h2>
+                <div class="data-grid">
+                    <div class="data-item"><span class="data-label" data-tooltip="Material the gecko is crawling on">Surface</span><span class="data-value" id="data-surface">Floor</span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Current movement speed">Gecko Speed</span><span class="data-value" id="data-speed">0.0 <small>px/s</small></span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Downward force from mass">Gravity Force</span><span class="data-value" id="data-gravity-force">0.59 <small>N</small></span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Upward force from toe pads">Adhesion Force</span><span class="data-value" id="data-adhesion-force">0.0 <small>N</small></span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Sum of all forces">Net Force</span><span class="data-value" id="data-net-force">0.0 <small>N</small></span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Number of feet touching surface">Feet Attached</span><span class="data-value" id="data-feet">4 / 4</span></div>
+                    <div class="data-item"><span class="data-label" data-tooltip="Current progress in the walk cycle">Gait Phase</span><div class="gait-bar"><div class="gait-fill" id="gait-fill"></div></div></div>
+                </div>
+            </section>
+            <!-- Playback Controls -->
+            <section class="panel" id="playback-panel">
+                <h2 class="panel-title"><span class="panel-icon">⏯️</span> Playback</h2>
+                <div class="playback-buttons">
+                    <button class="btn btn-icon" id="btn-reverse" title="Reverse">⏪</button>
+                    <button class="btn btn-icon btn-primary" id="btn-play-pause" title="Play/Pause">⏸️</button>
+                    <button class="btn btn-icon" id="btn-step" title="Step">⏭️</button>
+                    <button class="btn btn-icon" id="btn-reset" title="Reset">🔄</button>
+                </div>
+            </section>
+            <!-- Simulation Parameters -->
+            <section class="panel" id="params-panel">
+                <h2 class="panel-title"><span class="panel-icon">⚙️</span> Parameters</h2>
+                <div class="control-group">
+                    <label for="slider-speed" data-tooltip="How fast the simulation runs">🦎 Locomotion Speed</label>
+                    <div class="slider-row"><input type="range" id="slider-speed" min="0" max="3" step="0.1" value="1"><span class="slider-value" id="val-speed">1.0×</span></div>
+                </div>
+                <div class="control-group">
+                    <label for="slider-gravity" data-tooltip="Strength of gravity pulling down">🌍 Gravity</label>
+                    <div class="slider-row"><input type="range" id="slider-gravity" min="0" max="25" step="0.5" value="9.8"><span class="slider-value" id="val-gravity">9.8</span></div>
+                </div>
+                <div class="control-group">
+                    <label for="slider-adhesion" data-tooltip="Multiplier for toe pad sticky force">🔬 Adhesion Strength</label>
+                    <div class="slider-row"><input type="range" id="slider-adhesion" min="0" max="200" step="5" value="100"><span class="slider-value" id="val-adhesion">100%</span></div>
+                </div>
+                <div class="control-group">
+                    <label for="slider-wetness" data-tooltip="Reduces adhesion strength">💧 Surface Wetness</label>
+                    <div class="slider-row"><input type="range" id="slider-wetness" min="0" max="100" step="5" value="0"><span class="slider-value" id="val-wetness">0%</span></div>
+                </div>
+                <div class="control-group">
+                    <label for="select-surface" data-tooltip="Changes friction and stickiness">🧱 Surface Material</label>
+                    <select id="select-surface">
+                        <option value="stone">Stone</option>
+                        <option value="glass">Glass</option>
+                        <option value="wood">Wood</option>
+                        <option value="metal">Metal</option>
+                    </select>
+                </div>
+            </section>
+            <!-- Visualization Toggles -->
+            <section class="panel" id="viz-panel">
+                <h2 class="panel-title"><span class="panel-icon">👁️</span> Visualization</h2>
+                <div class="toggle-group"><label class="toggle-label"><input type="checkbox" id="toggle-forces" checked><span class="toggle-switch"></span>📐 Force Vectors</label></div>
+                <div class="toggle-group"><label class="toggle-label"><input type="checkbox" id="toggle-setae"><span class="toggle-switch"></span>🔍 Setae Detail</label></div>
+                <div class="toggle-group"><label class="toggle-label"><input type="checkbox" id="toggle-grid"><span class="toggle-switch"></span>📏 Grid Overlay</label></div>
+                <div class="toggle-group"><label class="toggle-label"><input type="checkbox" id="toggle-trail"><span class="toggle-switch"></span>👣 Movement Trail</label></div>
+            </section>
+            <!-- Info Panel -->
+            <section class="panel panel-info" id="info-panel">
+                <h2 class="panel-title"><span class="panel-icon">🧬</span> How It Works</h2>
+                <p class="info-text">Geckos adhere to surfaces using <strong>van der Waals forces</strong> generated by millions of microscopic <strong>setae</strong> on their toe pads. Each foot can support up to <strong>~20 N</strong> of adhesive force.</p>
+                <p class="info-text">Detachment occurs by <strong>peeling</strong> toes at an angle &gt;30°, requiring near-zero energy. The <strong>diagonal trotting gait</strong> (FL+RR, then FR+RL) ensures stability on any surface.</p>
+            </section>
+            <!-- Keyboard Shortcuts -->
+            <section class="panel panel-shortcuts">
+                <h2 class="panel-title"><span class="panel-icon">⌨️</span> Shortcuts</h2>
+                <div class="shortcut-list">
+                    <div class="shortcut"><kbd>Space</kbd> Play/Pause</div>
+                    <div class="shortcut"><kbd>F</kbd> Toggle Forces</div>
+                    <div class="shortcut"><kbd>R</kbd> Reset</div>
+                    <div class="shortcut"><kbd>G</kbd> Toggle Grid</div>
+                    <div class="shortcut"><kbd>D</kbd> Reverse</div>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <!-- ═══ TAB: Biomechanics ═══ -->
+    <div id="tab-biomechanics" class="tab-content">
+        <div class="bio-layout">
+            <div class="bio-canvas-wrap">
+                <canvas id="biomech-canvas"></canvas>
+            </div>
+            <aside class="bio-sidebar">
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">🦴</span> Joint Angles (Live)</h2>
+                    <div class="data-grid" id="joint-angles-grid">
+                        <div class="data-item"><span class="data-label">FL Shoulder</span><span class="data-value" id="ja-fl-sh">0°</span></div>
+                        <div class="data-item"><span class="data-label">FL Elbow</span><span class="data-value" id="ja-fl-el">0°</span></div>
+                        <div class="data-item"><span class="data-label">FR Shoulder</span><span class="data-value" id="ja-fr-sh">0°</span></div>
+                        <div class="data-item"><span class="data-label">FR Elbow</span><span class="data-value" id="ja-fr-el">0°</span></div>
+                        <div class="data-item"><span class="data-label">RL Hip</span><span class="data-value" id="ja-rl-hp">0°</span></div>
+                        <div class="data-item"><span class="data-label">RL Knee</span><span class="data-value" id="ja-rl-kn">0°</span></div>
+                        <div class="data-item"><span class="data-label">RR Hip</span><span class="data-value" id="ja-rr-hp">0°</span></div>
+                        <div class="data-item"><span class="data-label">RR Knee</span><span class="data-value" id="ja-rr-kn">0°</span></div>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">⚡</span> Force Decomposition</h2>
+                    <div class="data-grid">
+                        <div class="data-item"><span class="data-label">Normal Force</span><span class="data-value" id="fd-normal">0.0 N</span></div>
+                        <div class="data-item"><span class="data-label">Tangential Force</span><span class="data-value" id="fd-tangential">0.0 N</span></div>
+                        <div class="data-item"><span class="data-label">Friction Force</span><span class="data-value" id="fd-friction">0.0 N</span></div>
+                        <div class="data-item"><span class="data-label">CoM Stability</span><span class="data-value" id="fd-com">Stable</span></div>
+                    </div>
+                </section>
+                <section class="panel panel-info">
+                    <h2 class="panel-title"><span class="panel-icon">🔬</span> Toe Pad Mechanics</h2>
+                    <p class="info-text">Each gecko toe pad contains ~500,000 <strong>setae</strong> (hair-like structures ~100μm long). Each seta branches into 100–1,000 <strong>spatulae</strong> (~200nm tips).</p>
+                    <p class="info-text">Van der Waals forces at this scale generate ~10 N/cm² adhesion. The gecko controls attachment via <strong>angle-dependent detachment</strong> — peeling at &gt;30° breaks contact with minimal energy.</p>
+                    <canvas id="toepad-canvas" width="280" height="160"></canvas>
+                </section>
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">💪</span> Muscle Activation</h2>
+                    <div id="muscle-timeline">
+                        <div class="muscle-row"><span class="muscle-label">FL Flexors</span><div class="muscle-bar"><div class="muscle-fill" id="mf-fl"></div></div></div>
+                        <div class="muscle-row"><span class="muscle-label">FR Flexors</span><div class="muscle-bar"><div class="muscle-fill" id="mf-fr"></div></div></div>
+                        <div class="muscle-row"><span class="muscle-label">RL Extensors</span><div class="muscle-bar"><div class="muscle-fill" id="mf-rl"></div></div></div>
+                        <div class="muscle-row"><span class="muscle-label">RR Extensors</span><div class="muscle-bar"><div class="muscle-fill" id="mf-rr"></div></div></div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: Gait Analysis ═══ -->
+    <div id="tab-gait" class="tab-content">
+        <div class="gait-layout">
+            <div class="gait-main">
+                <div class="gait-header-bar">
+                    <h2 class="section-title">Multi-Species Gait Comparison</h2>
+                    <div class="species-selector">
+                        <label for="select-species">Active Species:</label>
+                        <select id="select-species">
+                            <option value="tokay">Tokay Gecko</option>
+                            <option value="crested">Crested Gecko</option>
+                            <option value="leopard">Leopard Gecko</option>
+                            <option value="daygecko">Day Gecko</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="gait-canvases">
+                    <div class="gait-canvas-card">
+                        <h3 class="card-title">Gait Phase Diagram</h3>
+                        <canvas id="gait-phase-canvas"></canvas>
+                    </div>
+                    <div class="gait-canvas-card">
+                        <h3 class="card-title">Stride Analysis</h3>
+                        <canvas id="stride-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <aside class="gait-sidebar">
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">🦎</span> Species Profile</h2>
+                    <div class="species-card" id="species-card">
+                        <div class="species-name" id="species-name">Tokay Gecko</div>
+                        <div class="species-sci" id="species-sci">Gekko gecko</div>
+                        <div class="data-grid">
+                            <div class="data-item"><span class="data-label">Body Length</span><span class="data-value" id="sp-length">25–30 cm</span></div>
+                            <div class="data-item"><span class="data-label">Mass</span><span class="data-value" id="sp-mass">150–300 g</span></div>
+                            <div class="data-item"><span class="data-label">Max Speed</span><span class="data-value" id="sp-speed">1.5 m/s</span></div>
+                            <div class="data-item"><span class="data-label">Gait Pattern</span><span class="data-value" id="sp-gait">Diagonal Trot</span></div>
+                            <div class="data-item"><span class="data-label">Adhesion</span><span class="data-value" id="sp-adhesion">Very Strong</span></div>
+                            <div class="data-item"><span class="data-label">Habitat</span><span class="data-value" id="sp-habitat">Arboreal</span></div>
+                            <div class="data-item"><span class="data-label">Toe Pads</span><span class="data-value" id="sp-toepads">Yes</span></div>
+                            <div class="data-item"><span class="data-label">Duty Factor</span><span class="data-value" id="sp-duty">0.65</span></div>
+                        </div>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">📏</span> Comparison Table</h2>
+                    <div class="comparison-table-wrap">
+                        <table class="comparison-table" id="species-comparison-table">
+                            <thead>
+                                <tr><th>Metric</th><th>Tokay</th><th>Crested</th><th>Leopard</th><th>Day</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Speed (m/s)</td><td>1.5</td><td>0.8</td><td>1.0</td><td>1.2</td></tr>
+                                <tr><td>Stride (cm)</td><td>12</td><td>8</td><td>10</td><td>7</td></tr>
+                                <tr><td>Frequency (Hz)</td><td>12.5</td><td>10.0</td><td>10.0</td><td>17.1</td></tr>
+                                <tr><td>Duty Factor</td><td>0.65</td><td>0.72</td><td>0.60</td><td>0.58</td></tr>
+                                <tr><td>Adhesion</td><td>Strong</td><td>Moderate</td><td>Weak</td><td>Strong</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: Human Correlation ═══ -->
+    <div id="tab-human" class="tab-content">
+        <div class="human-layout">
+            <div class="split-view">
+                <div class="split-panel">
+                    <h3 class="split-label">🦎 Gecko — Diagonal Trot</h3>
+                    <canvas id="gecko-compare-canvas"></canvas>
+                </div>
+                <div class="split-divider"></div>
+                <div class="split-panel">
+                    <h3 class="split-label">🧑 Human — Bipedal Walk</h3>
+                    <canvas id="human-compare-canvas"></canvas>
+                </div>
+            </div>
+            <div class="correlation-panels">
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">🔗</span> Joint Mapping</h2>
+                    <div class="mapping-list">
+                        <div class="mapping-item"><span class="map-gecko">Gecko Shoulder</span><span class="map-arrow">↔</span><span class="map-human">Human Shoulder</span></div>
+                        <div class="mapping-item"><span class="map-gecko">Gecko Elbow</span><span class="map-arrow">↔</span><span class="map-human">Human Elbow</span></div>
+                        <div class="mapping-item"><span class="map-gecko">Gecko Hip</span><span class="map-arrow">↔</span><span class="map-human">Human Hip</span></div>
+                        <div class="mapping-item"><span class="map-gecko">Gecko Knee</span><span class="map-arrow">↔</span><span class="map-human">Human Knee</span></div>
+                        <div class="mapping-item"><span class="map-gecko">Gecko Wrist</span><span class="map-arrow">↔</span><span class="map-human">Human Ankle</span></div>
+                        <div class="mapping-item"><span class="map-gecko">Toe Hyperextension</span><span class="map-arrow">↔</span><span class="map-human">Push-off Phase</span></div>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">🔄</span> Biomechanical Analogies</h2>
+                    <div class="analogy-cards">
+                        <div class="analogy-card">
+                            <div class="analogy-title">Diagonal Coordination</div>
+                            <p>Gecko's diagonal limb pairs (FL+RR) mirror <strong>human arm-leg counter-swing</strong> — left arm swings forward with right leg during walking.</p>
+                        </div>
+                        <div class="analogy-card">
+                            <div class="analogy-title">Toe Hyperextension</div>
+                            <p>Gecko peels toes upward to detach from surfaces, analogous to the <strong>human push-off phase</strong> where toes hyperextend to propel the body forward.</p>
+                        </div>
+                        <div class="analogy-card">
+                            <div class="analogy-title">Lateral Undulation</div>
+                            <p>Gecko's body undulates side-to-side during locomotion, similar to <strong>human trunk rotation</strong> and pelvic counter-rotation during walking.</p>
+                        </div>
+                        <div class="analogy-card">
+                            <div class="analogy-title">Stability Models</div>
+                            <p>Gecko's <strong>quadrupedal support polygon</strong> (4 contact points) vs human <strong>inverted pendulum model</strong> — both optimize center of mass trajectory.</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 class="panel-title"><span class="panel-icon">📊</span> Gait Phase Comparison</h2>
+                    <canvas id="gait-compare-canvas" height="120"></canvas>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: Bio-Inspiration ═══ -->
+    <div id="tab-bioinspiration" class="tab-content">
+        <div class="bioinsp-layout">
+            <div class="bioinsp-header">
+                <h2 class="section-title">Gecko-Inspired Technologies</h2>
+                <p class="section-subtitle">From millions of years of evolution to cutting-edge engineering — discoveries inspired by gecko biomechanics.</p>
+            </div>
+            <div class="gallery-grid">
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/gecko_climbing_robot.png" alt="Gecko-Inspired Climbing Robot"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Gecko-Inspired Climbing Robot</h3>
+                        <p class="card-desc">Robots using synthetic setae arrays can scale glass walls and traverse ceilings. Stanford's Stickybot and DARPA's Z-Man program demonstrate gecko-mimetic climbing at human scale.</p>
+                        <div class="card-tags"><span class="tag">Robotics</span><span class="tag">Adhesion</span></div>
+                    </div>
+                </div>
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/gecko_adhesive_tape.png" alt="Gecko Adhesive Tape"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Dry Adhesive Technology</h3>
+                        <p class="card-desc">Gecko-inspired dry adhesives use micro-pillar arrays with mushroom-shaped tips to create strong, reusable adhesion without chemical glue — ideal for space applications.</p>
+                        <div class="card-tags"><span class="tag">Materials</span><span class="tag">Nano-tech</span></div>
+                    </div>
+                </div>
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/gecko_toepad_microscopic.png" alt="Gecko Toe Pad Microscopic View"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Hierarchical Toe Pad Structure</h3>
+                        <p class="card-desc">Gecko toe pads show a remarkable hierarchy: lamellae → setae → spatulae. Each foot has ~500,000 setae generating van der Waals forces sufficient to support the gecko's weight.</p>
+                        <div class="card-tags"><span class="tag">Biology</span><span class="tag">Microscopy</span></div>
+                    </div>
+                </div>
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/bioinspired_climbing.png" alt="Bio-Inspired Climbing Equipment"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Human Climbing Equipment</h3>
+                        <p class="card-desc">DARPA's Z-Man project created gecko-inspired paddles enabling a 100 kg person to climb glass. Each paddle uses millions of synthetic micro-fibers creating directional adhesion.</p>
+                        <div class="card-tags"><span class="tag">Military</span><span class="tag">Equipment</span></div>
+                    </div>
+                </div>
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/gecko_vs_robot.png" alt="Gecko Foot vs Robot Gripper"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Biological vs Engineered Adhesion</h3>
+                        <p class="card-desc">Comparing gecko's natural setae arrays with synthetic micro-fiber grippers reveals converging design principles: hierarchical structure, directional adhesion, and easy release.</p>
+                        <div class="card-tags"><span class="tag">Comparison</span><span class="tag">Design</span></div>
+                    </div>
+                </div>
+                <div class="gallery-card">
+                    <div class="card-image"><img src="images/medical_adhesive.png" alt="Medical Adhesive Patches"></div>
+                    <div class="card-body">
+                        <h3 class="card-title">Medical Adhesive Patches</h3>
+                        <p class="card-desc">Gecko-inspired medical adhesives provide strong, painless, residue-free bonding to skin — ideal for surgical tapes, wound closure, and wearable sensor attachment.</p>
+                        <div class="card-tags"><span class="tag">Medical</span><span class="tag">Healthcare</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="engine.js"></script>
+    <script src="renderer.js"></script>
+    <script src="biomechanics.js"></script>
+    <script src="gait.js"></script>
+    <script src="human.js"></script>
+    <script src="simulation.js"></script>
+</body>
+</html>
